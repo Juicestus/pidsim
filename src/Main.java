@@ -1,116 +1,208 @@
+// PIDSim
+// GUI Simulator for the SwerveWheel encoder,
+// PID, and position selection.
+//
+// Written by Justus Languell (Juicestus) in July 2021
+// for use at Texas Torque (FRC Team 1477) 
+
 import java.lang.*;
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import javax.swing.*;
 
 class MainCanvas extends JComponent implements KeyListener {
 
-	final private double DEG2RAD = (Math.PI / 180);
-	final private double RAD2DEG = (180 / Math.PI);
+  final private double DEG2RAD = (Math.PI / 180);
+  final private double RAD2DEG = (180 / Math.PI);
 
-	private static int screenWidth = 1000;
-	private static int screenHeight = 1000;
+  private static int SCREEN_WIDTH = 1000;
+  private static int SCREEN_HEIGHT = 800;
 
-	private static boolean rightPressed = false;
-	private static boolean leftPressed = false;
+  private static int CONTROLS_WDITH = 600;
+  private static int CONTROLS_HEIGHT = 400;
 
-	private static int pointIncrement = 1;
+  private static int CANVAS_WIDTH = 600;
+  private static int CANVAS_HEIGHT = 600;
 
-	public static Rect follower = new Rect(500, 400, 50, 450);
-	public static Rect pointer = new Rect(500, 400, 25, 600);
-	//public static PID pid = new PID(.80, 0.1, 0.1);
+  private static int CANVAS_CENTER_X = (int) (CANVAS_WIDTH / 2);
+  private static int CANVAS_CENTER_Y = (int) (CANVAS_HEIGHT / 2);
 
+  // Check out Bound 2 by Kanye West!
+  private static int BOUND_X = (int) ((SCREEN_WIDTH - CANVAS_WIDTH) / 2);
+  private static int BOUND_Y = (int) ((SCREEN_HEIGHT - CANVAS_HEIGHT) / 2);
 
-	@Override 
-	public void keyTyped(KeyEvent e) {
-	}
+  private static boolean rightPressed = false;
+  private static boolean leftPressed = false;
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		rightPressed = (e.getKeyCode() == KeyEvent.VK_RIGHT);
-		leftPressed = (e.getKeyCode() == KeyEvent.VK_LEFT);
-	}
+  private static int pointIncrement = 1;
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-		rightPressed = false;
-		leftPressed = false;
-	}
+  public static Rect follower = new Rect(CANVAS_CENTER_X, CANVAS_CENTER_Y, 50, 350);
+  public static Rect pointer = new Rect(CANVAS_CENTER_X, CANVAS_CENTER_Y, 25, 600);
 
-	public void set() {
-		repaint();
-	}
+  @Override
+  public void keyTyped(KeyEvent e) {
+  }
 
-	public void paint(Graphics g) {
-		super.paint(g);
-		Graphics2D g2d = (Graphics2D) g;
+  @Override
+  public void keyPressed(KeyEvent e) {
+    rightPressed = (e.getKeyCode() == KeyEvent.VK_RIGHT);
+    leftPressed = (e.getKeyCode() == KeyEvent.VK_LEFT);
+  }
 
-		g2d.setColor(Color.GREEN);
-		Shape pointerShape = pointer.getShape();
-		g2d.draw(pointerShape);
-		g2d.fill(pointerShape);
+  @Override
+  public void keyReleased(KeyEvent e) {
+    rightPressed = false;
+    leftPressed = false;
+  }
 
-		g2d.setColor(Color.BLACK);
-		Shape followerShape = follower.getShape();
-		g2d.draw(followerShape);
-		g2d.fill(followerShape);
-	}
+  public void set() {
+    repaint();
+  }
 
-	public static double[] readPIDVals(String fn) {
-		double[] r = new double[3];
-		try {
-			String contents = "";
-			File fObj = new File(fn);
-			Scanner reader = new Scanner(fObj);
-			while (reader.hasNextLine()) {
-				contents += reader.nextLine();
-			}
-			reader.close();
-			String[] split = contents.split(",");
-			for (int i=0; i < r.length; i++) {
-				r[i] = Double.parseDouble(split[i]);
-			}
-		} catch (FileNotFoundException e) {
-			System.out.println(String.format(
-				"File: %s cannot be found!", fn));
-		}
-		return r;
-	}
+  public void paint(Graphics g) {
+    super.paint(g);
+    Graphics2D g2d = (Graphics2D) g;
 
-	public static void main(String[] args) throws InterruptedException {
+    g2d.setColor(Color.GREEN);
+    Shape pointerShape = pointer.getShape();
+    g2d.draw(pointerShape);
+    g2d.fill(pointerShape);
 
-		PID pid = new PID();
-		double[] arr;
+    g2d.setColor(Color.BLACK);
+    Shape followerShape = follower.getShape();
+    g2d.draw(followerShape);
+    g2d.fill(followerShape);
+  }
 
-		String fn = "pid.txt";
-		if (args.length > 0) {
-			fn = args[0];
-		}
-		System.out.printf("Reading PID values from file: %s", fn);
+  public static double[] readPIDVals(String fn) {
+    double[] r = new double[3];
+    try {
+      String contents = "";
+      File fObj = new File(fn);
+      Scanner reader = new Scanner(fObj);
+      while (reader.hasNextLine()) {
+        contents += reader.nextLine();
+      }
+      reader.close();
+      String[] split = contents.split(",");
+      for (int i = 0; i < r.length; i++) {
+        r[i] = Double.parseDouble(split[i]);
+      }
+    } catch (FileNotFoundException e) {
+      System.out.println(String.format("File: %s cannot be found!", fn));
+    }
+    return r;
+  }
 
-		JFrame window = new JFrame();
-		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		window.setBounds(30, 30, screenWidth, screenHeight);
-		window.setTitle(String.format("PID Simulator – reaing data from \"%s\"", fn));
+  public static void main(String[] args) throws InterruptedException {
 
-		JLabel data = new JLabel("Initializing...");
-		data.setVerticalAlignment(JLabel.BOTTOM);
+    PID pid = new PID();
+    double[] arr;
 
-		MainCanvas canvas = new MainCanvas();
-		window.addKeyListener(canvas);
-		window.getContentPane().add(canvas);
-		window.setVisible(true);
+    String fn = "pid.txt";
+    if (args.length > 0) {
+      fn = args[0];
+    }
+
+    System.out.printf("Reading PID values from file: %s", fn);
+
+    // Start UI etc.
+    JFrame window = new JFrame();
+    window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    window.setTitle(String.format("PID Simulator – reaing data from \"%s\"", fn));
+    window.setBounds(30, 30, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    Font serif = new Font("Times", Font.PLAIN, 18);
+    Font sans = new Font("Helvetica", Font.PLAIN, 18);
+    Font mono = new Font("Courier", Font.PLAIN, 18);
+
+    MainCanvas canvas = new MainCanvas();
+    canvas.setBorder(BorderFactory.createLineBorder(Color.black));
+    canvas.setBounds(BOUND_X, BOUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT);
+    window.addKeyListener(canvas);
+    window.getContentPane().add(canvas);
+    window.setVisible(true);
+
+    JFrame controls = new JFrame();
+    controls.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    controls.setBounds(30, 30, CONTROLS_WDITH, CONTROLS_HEIGHT);
+    controls.setTitle("Control Panel");
+
+    JPanel controlPanel = new JPanel();
+    controlPanel.setLayout(new GridLayout(0, 1));
+
+    JPanel output = new JPanel();
+    output.setLayout(new GridLayout(1, 0));
+    JLabel pointerPos = new JLabel("Initializing Positions...");
+    pointerPos.setHorizontalAlignment(JLabel.CENTER);
+    pointerPos.setFont(serif);
+    JLabel followerPos = new JLabel("Initializing Positions...");
+    followerPos.setHorizontalAlignment(JLabel.CENTER);
+    followerPos.setFont(serif);
+    output.add(pointerPos);
+    output.add(followerPos);
+    controlPanel.add(output);
+
+    JPanel reqPosPane = new JPanel();
+    reqPosPane.setLayout(new GridLayout(2, 0));
+
+    JLabel label = new JLabel("Set Requested Positions (-180 < n < 180)"); // make this set to wrap const
+    label.setFont(serif);
+    label.setHorizontalAlignment(JLabel.CENTER);
+    reqPosPane.add(label);
+
+    JPanel reqFormPane = new JPanel();
+    reqFormPane.setLayout(new FlowLayout());
+
+    JTextField reqPosF = new JTextField("");
+    reqPosF.setColumns(10);
+
+    reqPosF.setFont(mono);
+    reqFormPane.add(reqPosF);
+
+    JButton submit = new JButton("Change Position");
+    submit.setFont(serif);
+    reqFormPane.add(submit);
+
+    reqPosPane.add(reqFormPane);
+    controlPanel.add(reqPosPane);
+
+    controls.getContentPane().add(controlPanel);
+    controls.setVisible(true);
+
+    submit.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        String reqPosS = reqPosF.getText();
+        try {
+          int reqPosI = Integer.parseInt(reqPosS);
+          if (-180 > reqPosI) {
+            pointer.rot = -180;
+          } else if (reqPosI > 180) {
+            pointer.rot = 180;
+          } else {
+            pointer.rot = reqPosI;
+          }
+        } catch (NumberFormatException error) {
+          reqPosF.setText("Invalid!");
+        }
+
+      }
+    });
+
+    // End UI etc.
+
+    double minChange = 0.;
 
 		while (true) {
 			arr = readPIDVals(fn);
 			pid.setFromArry(arr);
 
-			Thread.sleep(5);
+			Thread.sleep(10);
 			canvas.set();
 			/* Start */
 
@@ -121,21 +213,22 @@ class MainCanvas extends JComponent implements KeyListener {
 				pointer.rot -= pointIncrement;
 			}
 
-			pointer.clampBetween(-180, 180);
-			follower.clampBetween(-180, 180);
+      pointer.clampBetween(-180, 180);
+      //follower.clampBetween(-180, 180);
+      minChange = MinimumChange.getMinimumChange(follower.rot, pointer.rot);
 
-			pid.target = pointer.rot;
-			follower.rot = pid.update(follower.rot);
 
-			/* End */
-			window.getContentPane().add(canvas);
-			data.setText(String.format(
-				"  Pointer θ: %03d°    Follower θ: %03d°", 
-				(int) (pointer.rot),
-				(int) (follower.rot)
-			));
-			window.getContentPane().add(data);
-			window.setVisible(true);
+      //pid.target = pointer.rot;
+      pid.target = minChange;
+      follower.rot = pid.update(follower.rot);
+
+      /* End */
+      canvas.setBounds(BOUND_X, BOUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT);
+      window.getContentPane().add(canvas);
+      
+			pointerPos.setText(String.format("Pointer Pos θ: %03d°", (int)(pointer.rot)));
+      followerPos.setText(String.format("Follower θ: %03d°", (int)(follower.rot)));
+
 		}
 	}
 }
@@ -207,10 +300,10 @@ class PID {
 		time = System.currentTimeMillis();
 		error = target - input;
 
-		double timeDelta = 0;
+    double timeDelta = 0;
 		if (!pTime.nil) {
-			timeDelta = time - pTime.val;
-		}
+      timeDelta = time - pTime.val;
+    }
 
 		double errorDelta = 0;
 		if (!pError.nil) {
@@ -278,4 +371,62 @@ class NDouble {
 	public boolean isNil() {
 		return nil;
 	}
+}
+
+// All of this could be so completely fucking wrong but thats why im making it ...
+// to see how wrong we r and then to cry about it
+class MinimumChange {
+  public static int m = 180; // this is the max in each direction
+  // 180 is for degrees, 5600 is out setting for encoder units
+
+  // My programming lead Jack understands this like 1000 times more than I do
+  public static double getMinimumChange(double real, double value) {
+    double realFloored = getFloored(real, real);
+    double valueFloored = value;
+
+    // Why is it dv?
+    // What does that mean?
+    // IDK either, Jack just thought it was a good variable on the whiteboard
+    // https://www.justusl.com/static/img/whiteboard.jpg
+
+    // It represents the "wrap around" diffrence
+    double dv = (Math.abs(nonZeroSignum(realFloored) * m - realFloored))
+      + (Math.abs(nonZeroSignum(valueFloored) * m - valueFloored));
+    
+    // This represents the "wrap in" diffrence
+    double ds = realFloored - valueFloored;
+    System.out.printf("(%f, %f) (%f, %f)\n", real, realFloored, ds, dv); // Jacks debug
+
+    if (Math.abs(ds) < dv) {
+      return real - ds;
+    }
+    return (nonZeroSignum(real) * dv) + real;
+  }
+
+  public static double getFloored(double real, double value) {
+    int a = (int)(Math.abs(Math.floor(real / m)));
+    int sign = (int) (nonZeroSignum(real));
+    double remainder = Math.abs(value % m);
+
+    if (sign == -1) {
+      if (a % 2 == 0) {
+        return remainder;
+      } else {
+        return m - remainder;
+      }
+    } else {
+      if (a % 2 == 1) {
+        return -m - remainder;
+      } else {
+        return remainder;
+      }
+    }
+  }
+
+  public static double nonZeroSignum(double val) {
+    if (val >= 0) {
+      return 1;
+    }
+    return -1;
+  }
 }
