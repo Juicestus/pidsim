@@ -12,5 +12,3 @@ Use ```java Main.java```\
 If you want to use a different PID settings file than the default ```pid.text``` in the parent directly,\
 pass the first argument as the path to the new PID settings file.\
 Example: ```java Main.java /path/to/pid.txt```
-
-

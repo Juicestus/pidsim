@@ -150,7 +150,8 @@ class MainCanvas extends JComponent implements KeyListener {
     JPanel reqPosPane = new JPanel();
     reqPosPane.setLayout(new GridLayout(2, 0));
 
-    JLabel label = new JLabel("Set Requested Positions (-180 < n < 180)"); // make this set to wrap const
+    JLabel label = new JLabel("Set Requested Positions (-180 < n < 180)"); 
+    // make this set to wrap const maybe idk (M)
     label.setFont(serif);
     label.setHorizontalAlignment(JLabel.CENTER);
     reqPosPane.add(label);
