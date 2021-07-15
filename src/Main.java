@@ -150,7 +150,7 @@ class MainCanvas extends JComponent implements KeyListener {
     JPanel reqPosPane = new JPanel();
     reqPosPane.setLayout(new GridLayout(2, 0));
 
-    JLabel label = new JLabel("Set Requested Positions (-180 < n < 180)"); 
+    JLabel label = new JLabel("Set Requested Positions (-180 < n < 180)");
     // make this set to wrap const maybe idk (M)
     label.setFont(serif);
     label.setHorizontalAlignment(JLabel.CENTER);
@@ -199,182 +199,182 @@ class MainCanvas extends JComponent implements KeyListener {
 
     double minChange = 0.;
 
-		while (true) {
-			arr = readPIDVals(fn);
-			pid.setFromArry(arr);
+    while (true) {
+      arr = readPIDVals(fn);
+      pid.setFromArry(arr);
 
-			Thread.sleep(10);
-			canvas.set();
-			/* Start */
+      Thread.sleep(10);
+      canvas.set();
+      /* Start */
 
-			if (rightPressed) {
-				pointer.rot += pointIncrement;
-			}
-			if (leftPressed) {
-				pointer.rot -= pointIncrement;
-			}
+      if (rightPressed) {
+        pointer.rot += pointIncrement;
+      }
+      if (leftPressed) {
+        pointer.rot -= pointIncrement;
+      }
 
       pointer.clampBetween(-180, 180);
-      //follower.clampBetween(-180, 180);
+      // follower.clampBetween(-180, 180);
       minChange = MinimumChange.getMinimumChange(follower.rot, pointer.rot);
 
-
-      //pid.target = pointer.rot;
+      // pid.target = pointer.rot;
       pid.target = minChange;
       follower.rot = pid.update(follower.rot);
 
       /* End */
       canvas.setBounds(BOUND_X, BOUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT);
       window.getContentPane().add(canvas);
-      
-			pointerPos.setText(String.format("Pointer Pos θ: %03d°", (int)(pointer.rot)));
-      followerPos.setText(String.format("Follower θ: %03d°", (int)(follower.rot)));
 
-		}
-	}
+      pointerPos.setText(String.format("Pointer Pos θ: %03d°", (int) (pointer.rot)));
+      followerPos.setText(String.format("Follower θ: %03d°", (int) (follower.rot)));
+
+    }
+  }
 }
 
 class Rect {
-	public double rot = 0;
-	public int cx = 0;
-	public int cy = 0;
-	public int w = 0;
-	public int h = 0;
+  public double rot = 0;
+  public int cx = 0;
+  public int cy = 0;
+  public int w = 0;
+  public int h = 0;
 
-	public Rect (int cx, int cy, int w, int h) {
-		this.cx = cx;
-		this.cy = cx;
-		this.w = w;
-		this.h = h;
-	}
+  public Rect(int cx, int cy, int w, int h) {
+    this.cx = cx;
+    this.cy = cx;
+    this.w = w;
+    this.h = h;
+  }
 
-	public Shape getShape() {
-		AffineTransform rotation = new AffineTransform();
-		rotation.rotate(Math.toRadians(rot));
+  public Shape getShape() {
+    AffineTransform rotation = new AffineTransform();
+    rotation.rotate(Math.toRadians(rot));
 
-		AffineTransform translation = new AffineTransform();
-		translation.translate(cx, cy);
+    AffineTransform translation = new AffineTransform();
+    translation.translate(cx, cy);
 
-		Rectangle rect = new Rectangle(-(int)(w/2), -(int)(h/2), w, h);
-		Shape shape = rotation.createTransformedShape(rect);
-		shape = translation.createTransformedShape(shape);	
-		return shape;
-	}
+    Rectangle rect = new Rectangle(-(int) (w / 2), -(int) (h / 2), w, h);
+    Shape shape = rotation.createTransformedShape(rect);
+    shape = translation.createTransformedShape(shape);
+    return shape;
+  }
 
-	public void clampBetween(int lower, int upper) {
-		if (rot > upper) {
-			rot = upper;
-		}
-		if (rot < lower) {
-			rot = lower;
-		}
-	}
+  public void clampBetween(int lower, int upper) {
+    if (rot > upper) {
+      rot = upper;
+    }
+    if (rot < lower) {
+      rot = lower;
+    }
+  }
 }
 
 class PID {
-	private double kp;
-	private double ki;
-	private double kd;
+  private double kp;
+  private double ki;
+  private double kd;
 
-	private double p = 0;
-	private double i = 0;
-	private double d = 0;
+  private double p = 0;
+  private double i = 0;
+  private double d = 0;
 
-	public double target;
+  public double target;
 
-	public double error = 0;
-	public NDouble pError = new NDouble();
+  public double error = 0;
+  public NDouble pError = new NDouble();
 
-	public double time = 0;
-	public NDouble pTime = new NDouble();
+  public double time = 0;
+  public NDouble pTime = new NDouble();
 
-	public PID() {
-	}
+  public PID() {
+  }
 
-	public PID(double kp, double ki, double kd) {
-		this.kp = kp;
-		this.ki = ki;
-		this.kd = kd;
-	}
+  public PID(double kp, double ki, double kd) {
+    this.kp = kp;
+    this.ki = ki;
+    this.kd = kd;
+  }
 
-	public double update(double input) {
-		time = System.currentTimeMillis();
-		error = target - input;
+  public double update(double input) {
+    time = System.currentTimeMillis();
+    error = target - input;
 
     double timeDelta = 0;
-		if (!pTime.nil) {
+    if (!pTime.nil) {
       timeDelta = time - pTime.val;
     }
 
-		double errorDelta = 0;
-		if (!pError.nil) {
-			errorDelta = error - pError.val;
-		}
+    double errorDelta = 0;
+    if (!pError.nil) {
+      errorDelta = error - pError.val;
+    }
 
-		p = kp * error;
-		// Kp(e)
+    p = kp * error;
+    // Kp(e)
 
-		i = i + (ki * error);
-		// Ki ∫e(Δt) 
+    i = i + (ki * error);
+    // Ki ∫e(Δt)
 
-		d = kd * (errorDelta / (timeDelta / 1000));
-		// Kd(Δe/Δt)
+    d = kd * (errorDelta / (timeDelta / 1000));
+    // Kd(Δe/Δt)
 
-		pTime.val = time;
-		pError.val = error;
+    pTime.val = time;
+    pError.val = error;
 
-		// Stupid way to check for NaN
-		// NaN != NaN, but a number == a number
-		// so (var != var) -> (val == NaN)
-		if (p != p) {
-			p = 0;
-		}
-		if (i != i) {
-			i = 0;
-		}
-		if (d != d) {
-			d = 0;
-		}
+    // Stupid way to check for NaN
+    // NaN != NaN, but a number == a number
+    // so (var != var) -> (val == NaN)
+    if (p != p) {
+      p = 0;
+    }
+    if (i != i) {
+      i = 0;
+    }
+    if (d != d) {
+      d = 0;
+    }
 
-		return p + i + d;
-	}
+    return p + i + d;
+  }
 
-	public void setFromArry(double[] arr) {
-		kp = arr[0];
-		ki = arr[1];
-		kd = arr[2];
-	}
+  public void setFromArry(double[] arr) {
+    kp = arr[0];
+    ki = arr[1];
+    kd = arr[2];
+  }
 }
 
 // Prob going to get rid of this class
 // and just use NaN as a no value state
 class NDouble {
-	public double val;
-	public boolean nil = true;
+  public double val;
+  public boolean nil = true;
 
-	public NDouble() {
-	}
+  public NDouble() {
+  }
 
-	public NDouble(int n) {
-		val = n;
-		nil = false;
-	}
+  public NDouble(int n) {
+    val = n;
+    nil = false;
+  }
 
-	public void set(int n) {
-		val = n;
-		nil = false;
-	}
+  public void set(int n) {
+    val = n;
+    nil = false;
+  }
 
-	public double get() {
-		return val;
-	}
+  public double get() {
+    return val;
+  }
 
-	public boolean isNil() {
-		return nil;
-	}
+  public boolean isNil() {
+    return nil;
+  }
 }
 
-// All of this could be so completely fucking wrong but thats why im making it ...
+// All of this could be so completely fucking wrong but thats why im making it
+// ...
 // to see how wrong we r and then to cry about it
 class MinimumChange {
   public static int m = 180; // this is the max in each direction
@@ -391,27 +391,28 @@ class MinimumChange {
     // https://www.justusl.com/static/img/whiteboard.jpg
 
     // It represents the "wrap around" diffrence
-    double dv = (Math.abs(nonZeroSignum(realFloored) * m - realFloored))
-      + (Math.abs(nonZeroSignum(valueFloored) * m - valueFloored));
-    
+    double dv_a = (Math.abs(-nonZeroSignum(valueFloored) * m - realFloored)); // d to breakoff point from real
+    double dv_b = (Math.abs(nonZeroSignum(valueFloored) * m - valueFloored)); // d to breakoff point from value
+    double dv = dv_a + dv_b;
+
     // This represents the "wrap in" diffrence
-    double ds = realFloored - valueFloored;
+    double ds = valueFloored - realFloored;
     System.out.printf("(%f, %f) (%f, %f)\n", real, realFloored, ds, dv); // Jacks debug
 
     if (Math.abs(ds) < dv) {
-      return real - ds;
+      return real + ds;
     }
-    return (nonZeroSignum(real) * dv) + real;
+    return (nonZeroSignum(realFloored - valueFloored) * dv) + real;
   }
 
   public static double getFloored(double real, double value) {
-    int a = (int)(Math.abs(Math.floor(real / m)));
+    int a = (int) Math.floor(Math.abs((real / m)));
     int sign = (int) (nonZeroSignum(real));
     double remainder = Math.abs(value % m);
 
     if (sign == -1) {
       if (a % 2 == 0) {
-        return remainder;
+        return -remainder;
       } else {
         return m - remainder;
       }
