@@ -25,6 +25,7 @@ public class PID {
 
     public PID(String filename) {
         this.filename = filename;
+        setFromArray(readPIDVals());
     }
 
     public PID(double kp, double ki, double kd) {
@@ -75,7 +76,7 @@ public class PID {
         return p + i + d;
     }
 
-    public void setFromArry(double[] arr) {
+    public void setFromArray(double[] arr) {
         kp = arr[0];
         ki = arr[1];
         kd = arr[2];

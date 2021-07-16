@@ -1,14 +1,12 @@
 package simulations;
 
-import components.*;
 import java.awt.event.*;
 import java.awt.*;
 import javax.swing.*;
+import components.*;
 
-public class SwerveWheel extends Simulation implements KeyListener {
+public class SwerveWheel extends Simulation {
     private static final long serialVersionUID = 6871657960121883675L;
-    private static int SCREEN_WIDTH = 1000;
-    private static int SCREEN_HEIGHT = 800;
 
     private static int CONTROLS_WDITH = 600;
     private static int CONTROLS_HEIGHT = 400;
@@ -20,8 +18,8 @@ public class SwerveWheel extends Simulation implements KeyListener {
     private static int CANVAS_CENTER_Y = (int) (CANVAS_HEIGHT / 2);
 
     // Check out Bound 2 by Kanye West!
-    private static int BOUND_X = (int) ((SCREEN_WIDTH - CANVAS_WIDTH) / 2);
-    private static int BOUND_Y = (int) ((SCREEN_HEIGHT - CANVAS_HEIGHT) / 2);
+    private int BOUND_X = (int) ((SCREEN_WIDTH - CANVAS_WIDTH) / 2);
+    private int BOUND_Y = (int) ((SCREEN_HEIGHT - CANVAS_HEIGHT) / 2);
 
     private static boolean rightPressed = false;
     private static boolean leftPressed = false;
@@ -30,10 +28,6 @@ public class SwerveWheel extends Simulation implements KeyListener {
 
     public static Rect follower = new Rect(CANVAS_CENTER_X, CANVAS_CENTER_Y, 50, 350);
     public static Rect pointer = new Rect(CANVAS_CENTER_X, CANVAS_CENTER_Y, 25, 600);
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-    }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -51,9 +45,11 @@ public class SwerveWheel extends Simulation implements KeyListener {
         repaint();
     }
 
+    @Override
     public void paint(Graphics g) {
         super.paint(g);
         Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         g2d.setColor(Color.GREEN);
         Shape pointerShape = pointer.getShape();
@@ -73,7 +69,7 @@ public class SwerveWheel extends Simulation implements KeyListener {
         // Start UI etc.
         JFrame window = new JFrame();
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        window.setTitle(String.format("PID Simulator - SwerveWheel"));
+        window.setTitle("PID Simulator - SwerveWheel");
         window.setBounds(30, 30, SCREEN_WIDTH, SCREEN_HEIGHT);
 
         this.setBorder(BorderFactory.createLineBorder(Color.black));
@@ -156,7 +152,7 @@ public class SwerveWheel extends Simulation implements KeyListener {
 
         while (true) {
             arr = pid.readPIDVals();
-            pid.setFromArry(arr);
+            pid.setFromArray(arr);
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -171,7 +167,7 @@ public class SwerveWheel extends Simulation implements KeyListener {
                 pointer.rot -= pointIncrement;
             }
 
-            pointer.clampBetween(-180, 180);
+            pointer.clampRotation(-180, 180);
             // follower.clampBetween(-180, 180);
             minChange = MinimumChange.getMinimumChange(follower.rot, pointer.rot);
 
@@ -188,64 +184,59 @@ public class SwerveWheel extends Simulation implements KeyListener {
 
         }
     }
-}
 
-// All of this could be so completely wrong but thats why im making it
-// ...
-// to see how wrong we r and then to cry about it
-class MinimumChange {
-    public static int m = 180; // this is the max in each direction
-    // 180 is for degrees, 5600 is out setting for encoder units
+    // All of this could be so completely wrong but thats why im making it
+    // ...
+    // to see how wrong we r and then to cry about it
+    static class MinimumChange {
+        public static int m = 180; // this is the max in each direction
+        // 180 is for degrees, 5600 is out setting for encoder units
 
-    // My programming lead Jack understands this like 1000 times more than I do
-    public static double getMinimumChange(double real, double value) {
-        double realFloored = getFloored(real, real);
-        double valueFloored = value;
+        // My programming lead Jack understands this like 1000 times more than I do
+        public static double getMinimumChange(double real, double value) {
+            double realFloored = getFloored(real, real);
+            double valueFloored = value;
 
-        // Why is it dv?
-        // What does that mean?
-        // IDK either, Jack just thought it was a good variable on the whiteboard
-        // https://www.justusl.com/static/img/whiteboard.jpg
+            // Why is it dv?
+            // What does that mean?
+            // IDK either, Jack just thought it was a good variable on the whiteboard
+            // https://www.justusl.com/static/img/whiteboard.jpg
 
-        // It represents the "wrap around" diffrence
-        double dv_a = (Math.abs(-nonZeroSignum(valueFloored) * m - realFloored)); // d to breakoff point from real
-        double dv_b = (Math.abs(nonZeroSignum(valueFloored) * m - valueFloored)); // d to breakoff point from value
-        double dv = dv_a + dv_b;
+            // It represents the "wrap around" diffrence
+            double dv_a = (Math.abs(-MathUtils.nonZeroSignum(valueFloored) * m - realFloored)); // d to breakoff point
+                                                                                                // from real
+            double dv_b = (Math.abs(MathUtils.nonZeroSignum(valueFloored) * m - valueFloored)); // d to breakoff point
+                                                                                                // from value
+            double dv = dv_a + dv_b;
 
-        // This represents the "wrap in" diffrence
-        double ds = valueFloored - realFloored;
-        System.out.printf("(%f, %f) (%f, %f)\n", real, realFloored, ds, dv); // Jacks debug
+            // This represents the "wrap in" diffrence
+            double ds = valueFloored - realFloored;
+            System.out.printf("(%f, %f) (%f, %f)\n", real, realFloored, ds, dv); // Jacks debug
 
-        if (Math.abs(ds) < dv) {
-            return real + ds;
-        }
-        return (nonZeroSignum(realFloored - valueFloored) * dv) + real;
-    }
-
-    public static double getFloored(double real, double value) {
-        int a = (int) Math.floor(Math.abs((real / m)));
-        int sign = (int) (nonZeroSignum(real));
-        double remainder = Math.abs(value % m);
-
-        if (sign == -1) {
-            if (a % 2 == 0) {
-                return -remainder;
-            } else {
-                return m - remainder;
+            if (Math.abs(ds) < dv) {
+                return real + ds;
             }
-        } else {
-            if (a % 2 == 0) {
-                return remainder;
+            return (MathUtils.nonZeroSignum(realFloored - valueFloored) * dv) + real;
+        }
+
+        public static double getFloored(double real, double value) {
+            int a = (int) Math.floor(Math.abs((real / m)));
+            int sign = (int) (MathUtils.nonZeroSignum(real));
+            double remainder = Math.abs(value % m);
+
+            if (sign == -1) {
+                if (a % 2 == 0) {
+                    return -remainder;
+                } else {
+                    return m - remainder;
+                }
             } else {
-                return remainder - m;
+                if (a % 2 == 0) {
+                    return remainder;
+                } else {
+                    return remainder - m;
+                }
             }
         }
-    }
-
-    public static double nonZeroSignum(double val) {
-        if (val >= 0) {
-            return 1;
-        }
-        return -1;
     }
 }
